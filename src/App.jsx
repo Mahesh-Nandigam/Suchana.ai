@@ -18,9 +18,9 @@ Rules:
 5. In this case, you MUST return EXACTLY this JSON format:
    {
      "status": "draft_ready",
-     "ministry": "Ministry of...",
-     "authority": "Public Information Officer...",
-     "draft": "To, \\n The PIO..."
+     "ministry": "Ministry of Housing and Urban Affairs (example)",
+     "authority": "Public Information Officer (example)",
+     "draft": "To,\\nThe PIO... \\n\\nSubject: RTI Application under RTI Act 2005... \\n\\n[WRITE THE ENTIRE, COMPLETE 400+ WORD LEGAL DRAFT HERE. DO NOT TRUNCATE.]"
    }
 
 You MUST respond ONLY with a raw JSON object containing no markdown formatting, no backticks. Do not output anything outside the JSON.`;
