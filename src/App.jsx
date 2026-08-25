@@ -222,8 +222,14 @@ export default function App() {
     const thinkEnd = content.lastIndexOf('</think>');
     if (thinkEnd !== -1) {
       content = content.substring(thinkEnd + 8);
-    } else if (content.includes('<think>')) {
-      content = content.replace(/<think>[\s\S]*?(<\/think>|$)/gi, '');
+    } else {
+      // If there is a <think> tag but NO </think> tag, the entire string IS the think block!
+      // But wait! If the model didn't output a <think> tag, we shouldn't do anything.
+      // If the model did output a <think> tag, and it was truncated, there is NO JSON AT ALL.
+      // So if </think> is missing but <think> is there, the JSON never even started.
+      if (content.includes('<think>')) {
+        throw new Error("AI was still thinking when it hit the token limit. Please try again with a shorter input.");
+      }
     }
     
     // Clean up potential markdown wrappers
@@ -231,14 +237,35 @@ export default function App() {
     
     // Find the first { and last } to extract just the JSON object
     const startIdx = content.indexOf('{');
-    const endIdx = content.lastIndexOf('}');
-    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-      content = content.substring(startIdx, endIdx + 1);
+    let endIdx = content.lastIndexOf('}');
+    
+    if (startIdx !== -1) {
+      if (endIdx === -1 || endIdx < startIdx) {
+        // The JSON was truncated due to hard token limits. Attempt to auto-fix.
+        console.warn("JSON was truncated. Attempting to auto-fix.");
+        content = content.substring(startIdx);
+        // Remove trailing backslash if any
+        content = content.replace(/\\$/, '');
+        // Close the string and the object
+        content += '..."\n}';
+      } else {
+        content = content.substring(startIdx, endIdx + 1);
+      }
     } else {
       throw new Error("AI did not return a valid JSON format. Please try again.");
     }
-    
-    return JSON.parse(content);
+
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse JSON:", content);
+      
+      // Secondary fallback: if parsing fails on auto-fixed JSON, it might have truncated in the middle of a key or array
+      if (endIdx === -1 || endIdx < startIdx) {
+          throw new Error("AI output was truncated too early to recover. Please shorten your prompt or try again.");
+      }
+      throw new Error("AI did not return a valid JSON format. Please try again.");
+    }
   };
 
   const handleSubmit = async () => {
