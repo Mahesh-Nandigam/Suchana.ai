@@ -176,24 +176,19 @@ export default function App() {
           <X size={16} />
         </button>
       </div>
-    );
-  };
-
-  const processWithNvidia = async (text) => {
-    // The user explicitly requested to remove the "backup/mock" data and use a robust API
-    const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
-    if (!apiKey) {
-      throw new Error("NVIDIA API key not found. Please add VITE_NVIDIA_API_KEY to your .env.local file.");
-    }
-
-    const response = await fetch('/api/nvidia', {
+  const processWithAI = async (text) => {
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    
+    // We are using llama-3.1-8b-instant because it has massive rate limits (30k TPM) 
+    // and doesn't use token-heavy <think> blocks that crash the free tier.
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'meta/llama-3.3-70b-instruct',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: text }
@@ -262,7 +257,7 @@ export default function App() {
 
     try {
       const fullText = additionalDetails ? `${complaint}\n\nApplicant Details Provided: ${additionalDetails}` : complaint;
-      const result = await processWithNvidia(fullText);
+      const result = await processWithAI(fullText);
       clearInterval(interval);
       
       if (result.status === 'needs_info') {
