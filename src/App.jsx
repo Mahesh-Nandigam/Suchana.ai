@@ -234,6 +234,9 @@ export default function App() {
   };
 
   const handleSubmit = async () => {
+    if (isListening) {
+      stopRecording(false);
+    }
     if (!complaint) return;
     setStep('processing');
     setError('');
