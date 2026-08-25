@@ -192,13 +192,14 @@ export default function App() {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'qwen/qwen3.6-27b',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: text }
         ],
         temperature: 0.2,
-        max_tokens: 4096
+        max_tokens: 4096,
+        response_format: { type: "json_object" }
       })
     });
 
