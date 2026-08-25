@@ -260,7 +260,6 @@ export default function App() {
 
   return (
     <>
-      {renderVoicePill()}
       <div className="header-nav" onClick={() => setStep('landing')} style={{cursor: 'pointer'}}>
         <ShieldCheck className="text-accent" size={32} />
         <span style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '-0.5px' }}>Suchana.ai</span>
@@ -310,6 +309,7 @@ export default function App() {
           )}
 
           <div className="input-container">
+            {step === 'input' && renderVoicePill()}
             <div style={{ position: 'relative' }}>
               <textarea 
                 value={complaint}
@@ -355,6 +355,7 @@ export default function App() {
           )}
 
           <div className="input-container">
+            {step === 'details' && renderVoicePill()}
             <div style={{ position: 'relative' }}>
               <textarea 
                 value={additionalDetails}

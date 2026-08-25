@@ -548,26 +548,25 @@ textarea::placeholder {
 
 /* Antigravity Voice Pill UI */
 .recording-pill-overlay {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  top: -55px;
+  left: 0;
   background: #1e1e24;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 10px 16px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 16px;
-  z-index: 1000;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   color: #e5e7eb;
-  animation: slide-down-pill 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slide-up-pill 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes slide-down-pill {
-  0% { opacity: 0; transform: translate(-50%, -20px); }
-  100% { opacity: 1; transform: translate(-50%, 0); }
+@keyframes slide-up-pill {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .pill-mic-icon {
