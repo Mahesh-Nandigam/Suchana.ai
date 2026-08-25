@@ -179,20 +179,21 @@ export default function App() {
     );
   };
 
-  const processWithGroq = async (text) => {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey || apiKey === 'your_groq_api_key_here') {
-      throw new Error("API Key is missing. Please add VITE_GROQ_API_KEY to your .env.local file.");
+  const processWithNvidia = async (text) => {
+    // The user explicitly requested to remove the "backup/mock" data and use a robust API
+    const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
+    if (!apiKey) {
+      throw new Error("NVIDIA API key not found. Please add VITE_NVIDIA_API_KEY to your .env.local file.");
     }
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'qwen/qwen3.6-27b',
+        model: 'meta/llama-3.1-70b-instruct',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: text }
@@ -203,34 +204,16 @@ export default function App() {
     });
 
     if (!response.ok) {
-      let errorMsg = response.statusText;
-      try {
-        const errData = await response.json();
-        if (errData.error && errData.error.message) {
-          errorMsg = errData.error.message;
-        }
-      } catch (e) {
-        // ignore JSON parse error
+      const errorData = await response.json().catch(() => ({}));
+      let errorMsg = errorData.error?.message || response.statusText;
+      if (response.status === 401) {
+        errorMsg = 'Invalid NVIDIA API key. Please generate a new one from build.nvidia.com.';
       }
       throw new Error(`API Error: ${errorMsg}`);
     }
 
     const data = await response.json();
     let content = data.choices[0].message.content || '';
-    
-    // Safely remove <think> blocks
-    const thinkEnd = content.lastIndexOf('</think>');
-    if (thinkEnd !== -1) {
-      content = content.substring(thinkEnd + 8);
-    } else {
-      // If there is a <think> tag but NO </think> tag, the entire string IS the think block!
-      // But wait! If the model didn't output a <think> tag, we shouldn't do anything.
-      // If the model did output a <think> tag, and it was truncated, there is NO JSON AT ALL.
-      // So if </think> is missing but <think> is there, the JSON never even started.
-      if (content.includes('<think>')) {
-        throw new Error("AI was still thinking when it hit the token limit. Please try again with a shorter input.");
-      }
-    }
     
     // Clean up potential markdown wrappers
     content = content.replace(/```json/gi, '').replace(/```/gi, '').trim();
@@ -239,18 +222,8 @@ export default function App() {
     const startIdx = content.indexOf('{');
     let endIdx = content.lastIndexOf('}');
     
-    if (startIdx !== -1) {
-      if (endIdx === -1 || endIdx < startIdx) {
-        // The JSON was truncated due to hard token limits. Attempt to auto-fix.
-        console.warn("JSON was truncated. Attempting to auto-fix.");
-        content = content.substring(startIdx);
-        // Remove trailing backslash if any
-        content = content.replace(/\\$/, '');
-        // Close the string and the object
-        content += '..."\n}';
-      } else {
-        content = content.substring(startIdx, endIdx + 1);
-      }
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      content = content.substring(startIdx, endIdx + 1);
     } else {
       throw new Error("AI did not return a valid JSON format. Please try again.");
     }
@@ -259,11 +232,6 @@ export default function App() {
       return JSON.parse(content);
     } catch (parseError) {
       console.error("Failed to parse JSON:", content);
-      
-      // Secondary fallback: if parsing fails on auto-fixed JSON, it might have truncated in the middle of a key or array
-      if (endIdx === -1 || endIdx < startIdx) {
-          throw new Error("AI output was truncated too early to recover. Please shorten your prompt or try again.");
-      }
       throw new Error("AI did not return a valid JSON format. Please try again.");
     }
   };
@@ -294,7 +262,7 @@ export default function App() {
 
     try {
       const fullText = additionalDetails ? `${complaint}\n\nApplicant Details Provided: ${additionalDetails}` : complaint;
-      const result = await processWithGroq(fullText);
+      const result = await processWithNvidia(fullText);
       clearInterval(interval);
       
       if (result.status === 'needs_info') {

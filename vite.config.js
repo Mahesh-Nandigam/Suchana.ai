@@ -5,6 +5,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   define: {
-    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY)
+    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY),
+    'import.meta.env.VITE_NVIDIA_API_KEY': JSON.stringify(process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY)
   }
 })
