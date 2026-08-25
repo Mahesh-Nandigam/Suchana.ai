@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Send, ChevronRight, CheckCircle, ArrowRight, ShieldCheck, Building, Briefcase, Zap, Search, Fingerprint, X } from 'lucide-react';
+import { Mic, Send, ChevronRight, CheckCircle, ArrowRight, ShieldCheck, Building, Briefcase, Zap, Search, Fingerprint, X, AudioLines } from 'lucide-react';
 import './index.css';
 
 const SYSTEM_PROMPT = `You are a highly specialized legal AI assistant for the Government of India. 
@@ -308,29 +308,35 @@ export default function App() {
             </div>
           )}
 
-          <div className="input-container">
+          <div className="ag-input-wrapper">
             {step === 'input' && renderVoicePill()}
-            <div style={{ position: 'relative' }}>
-              <textarea 
-                value={complaint}
-                onChange={(e) => setComplaint(e.target.value)}
-                placeholder="e.g., The streetlights in my colony haven't been working for 3 months. Who is responsible for this?"
-              />
-              <div className="mic-wrapper">
+            <textarea 
+              value={complaint}
+              onChange={(e) => setComplaint(e.target.value)}
+              placeholder="e.g., The streetlights in my colony haven't been working for 3 months. Who is responsible for this?"
+            />
+            <div className="ag-bottom-bar">
+              <div className="ag-left-actions">
+              </div>
+              <div className="ag-right-actions">
                 {!isListening && (
                   <button 
-                    className="mic-btn"
+                    className="ag-mic-btn"
                     onClick={handleMicClick}
                     title="Dictate your issue"
                   >
-                    <Mic size={24} />
+                    <AudioLines size={18} />
                   </button>
                 )}
+                <button 
+                  className="ag-submit-btn"
+                  onClick={handleSubmit}
+                  title="Generate Legal Draft"
+                >
+                  <ArrowRight size={18} />
+                </button>
               </div>
             </div>
-            <button className="btn-primary" onClick={handleSubmit}>
-              Generate Legal Draft <Send size={20} />
-            </button>
           </div>
         </div>
       )}
@@ -354,29 +360,35 @@ export default function App() {
             </div>
           )}
 
-          <div className="input-container">
+          <div className="ag-input-wrapper">
             {step === 'details' && renderVoicePill()}
-            <div style={{ position: 'relative' }}>
-              <textarea 
-                value={additionalDetails}
-                onChange={(e) => setAdditionalDetails(e.target.value)}
-                placeholder="Type your details here (Name, Address, Pincode, etc)..."
-              />
-              <div className="mic-wrapper">
+            <textarea 
+              value={additionalDetails}
+              onChange={(e) => setAdditionalDetails(e.target.value)}
+              placeholder="Type your details here (Name, Address, Pincode, etc)..."
+            />
+            <div className="ag-bottom-bar">
+              <div className="ag-left-actions">
+              </div>
+              <div className="ag-right-actions">
                 {!isListening && (
                   <button 
-                    className="mic-btn"
+                    className="ag-mic-btn"
                     onClick={handleMicClick}
                     title="Dictate your details"
                   >
-                    <Mic size={24} />
+                    <AudioLines size={18} />
                   </button>
                 )}
+                <button 
+                  className="ag-submit-btn"
+                  onClick={handleSubmit}
+                  title="Finalize Draft"
+                >
+                  <ArrowRight size={18} />
+                </button>
               </div>
             </div>
-            <button className="btn-primary" onClick={handleSubmit}>
-              Finalize Draft <Send size={20} />
-            </button>
           </div>
         </div>
       )}
