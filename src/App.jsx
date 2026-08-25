@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mic, Send, ChevronRight, CheckCircle, ArrowRight, ShieldCheck, Building, Briefcase, Zap, Search, Fingerprint } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Mic, Send, ChevronRight, CheckCircle, ArrowRight, ShieldCheck, Building, Briefcase, Zap, Search, Fingerprint, X } from 'lucide-react';
 import './index.css';
 
 const SYSTEM_PROMPT = `You are a highly specialized legal AI assistant for the Government of India. 
@@ -34,6 +34,37 @@ export default function App() {
   const [error, setError] = useState('');
   const [missingQuestions, setMissingQuestions] = useState([]);
   const [additionalDetails, setAdditionalDetails] = useState('');
+  const [recordingTime, setRecordingTime] = useState(0);
+  
+  const recognitionRef = useRef(null);
+  const timerRef = useRef(null);
+  const previousTextRef = useRef('');
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const stopRecording = (cancel = false) => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch(e) {}
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsListening(false);
+    setRecordingTime(0);
+    
+    if (cancel) {
+      if (step === 'input') setComplaint(previousTextRef.current);
+      else setAdditionalDetails(previousTextRef.current);
+    }
+  };
 
   const handleMicClick = () => {
     if (isListening) return;
@@ -45,42 +76,92 @@ export default function App() {
     }
 
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    
     recognition.lang = 'en-IN';
     recognition.interimResults = true;
-    recognition.continuous = false;
+    recognition.continuous = true;
 
     recognition.onstart = () => {
       setIsListening(true);
-      if (step === 'input') {
-        setComplaint('');
-      } else {
-        setAdditionalDetails('');
+      setRecordingTime(0);
+      
+      let currentText = step === 'input' ? complaint : additionalDetails;
+      if (currentText && !currentText.endsWith(' ') && !currentText.endsWith('\n')) {
+        currentText += ' ';
       }
+      previousTextRef.current = currentText;
+
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 119) {
+            stopRecording(false);
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 1000);
     };
 
     recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0])
-        .map(result => result.transcript)
-        .join('');
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        previousTextRef.current += finalTranscript + ' ';
+      }
+      
+      const displayText = previousTextRef.current + interimTranscript;
       
       if (step === 'input') {
-        setComplaint(transcript);
+        setComplaint(displayText);
       } else {
-        setAdditionalDetails(transcript);
+        setAdditionalDetails(displayText);
       }
     };
 
     recognition.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
-      setIsListening(false);
+      stopRecording(false); // Stop safely without destroying the text on generic errors
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      stopRecording(false);
     };
 
     recognition.start();
+  };
+
+  const renderVoicePill = () => {
+    if (!isListening) return null;
+    
+    const mins = Math.floor(recordingTime / 60);
+    const secs = recordingTime % 60;
+    const timeString = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    return (
+      <div className="recording-pill-overlay">
+        <div className="pill-mic-icon">
+          <Mic size={18} />
+        </div>
+        <span className="pill-text">Recording...</span>
+        <span className="pill-timer">{timeString}</span>
+        <button className="pill-stop-btn" onClick={() => stopRecording(false)} title="Stop & Keep">
+          <div className="pill-stop-square"></div>
+        </button>
+        <button className="pill-close-btn" onClick={() => stopRecording(true)} title="Cancel">
+          <X size={18} />
+        </button>
+      </div>
+    );
   };
 
   const processWithGroq = async (text) => {
@@ -179,6 +260,7 @@ export default function App() {
 
   return (
     <>
+      {renderVoicePill()}
       <div className="header-nav" onClick={() => setStep('landing')} style={{cursor: 'pointer'}}>
         <ShieldCheck className="text-accent" size={32} />
         <span style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '-0.5px' }}>Suchana.ai</span>
@@ -235,13 +317,15 @@ export default function App() {
                 placeholder="e.g., The streetlights in my colony haven't been working for 3 months. Who is responsible for this?"
               />
               <div className="mic-wrapper">
-                <button 
-                  className={`mic-btn ${isListening ? 'listening' : ''}`}
-                  onClick={handleMicClick}
-                  title="Dictate your issue"
-                >
-                  <Mic size={24} />
-                </button>
+                {!isListening && (
+                  <button 
+                    className="mic-btn"
+                    onClick={handleMicClick}
+                    title="Dictate your issue"
+                  >
+                    <Mic size={24} />
+                  </button>
+                )}
               </div>
             </div>
             <button className="btn-primary" onClick={handleSubmit}>
@@ -278,13 +362,15 @@ export default function App() {
                 placeholder="Type your details here (Name, Address, Pincode, etc)..."
               />
               <div className="mic-wrapper">
-                <button 
-                  className={`mic-btn ${isListening ? 'listening' : ''}`}
-                  onClick={handleMicClick}
-                  title="Dictate your details"
-                >
-                  <Mic size={24} />
-                </button>
+                {!isListening && (
+                  <button 
+                    className="mic-btn"
+                    onClick={handleMicClick}
+                    title="Dictate your details"
+                  >
+                    <Mic size={24} />
+                  </button>
+                )}
               </div>
             </div>
             <button className="btn-primary" onClick={handleSubmit}>
