@@ -186,7 +186,7 @@ export default function App() {
       throw new Error("NVIDIA API key not found. Please add VITE_NVIDIA_API_KEY to your .env.local file.");
     }
 
-    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+    const response = await fetch('/api/nvidia', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
