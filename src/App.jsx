@@ -51,7 +51,11 @@ export default function App() {
 
     recognition.onstart = () => {
       setIsListening(true);
-      setComplaint(''); // Clear the textarea when starting to speak
+      if (step === 'input') {
+        setComplaint('');
+      } else {
+        setAdditionalDetails('');
+      }
     };
 
     recognition.onresult = (event) => {
@@ -59,7 +63,12 @@ export default function App() {
         .map(result => result[0])
         .map(result => result.transcript)
         .join('');
-      setComplaint(transcript);
+      
+      if (step === 'input') {
+        setComplaint(transcript);
+      } else {
+        setAdditionalDetails(transcript);
+      }
     };
 
     recognition.onerror = (event) => {
@@ -268,6 +277,15 @@ export default function App() {
                 onChange={(e) => setAdditionalDetails(e.target.value)}
                 placeholder="Type your details here (Name, Address, Pincode, etc)..."
               />
+              <div className="mic-wrapper">
+                <button 
+                  className={`mic-btn ${isListening ? 'listening' : ''}`}
+                  onClick={handleMicClick}
+                  title="Dictate your details"
+                >
+                  <Mic size={24} />
+                </button>
+              </div>
             </div>
             <button className="btn-primary" onClick={handleSubmit}>
               Finalize Draft <Send size={20} />
