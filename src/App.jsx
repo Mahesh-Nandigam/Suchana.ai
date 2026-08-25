@@ -39,6 +39,18 @@ export default function App() {
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
   const previousTextRef = useRef('');
+  const textareaRef1 = useRef(null);
+  const textareaRef2 = useRef(null);
+
+  // Auto-scroll textareas
+  useEffect(() => {
+    if (textareaRef1.current) {
+      textareaRef1.current.scrollTop = textareaRef1.current.scrollHeight;
+    }
+    if (textareaRef2.current) {
+      textareaRef2.current.scrollTop = textareaRef2.current.scrollHeight;
+    }
+  }, [complaint, additionalDetails]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -67,7 +79,10 @@ export default function App() {
   };
 
   const handleMicClick = () => {
-    if (isListening) return;
+    if (isListening) {
+      stopRecording(false);
+      return;
+    }
     
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -149,8 +164,8 @@ export default function App() {
 
     return (
       <div className="recording-pill-overlay">
-        <div className="pill-mic-icon">
-          <Mic size={18} />
+        <div className="pill-mic-icon" style={{ display: 'flex', alignItems: 'center', color: '#ef4444' }}>
+          <Mic size={16} className="dynamic-mic" />
         </div>
         <span className="pill-text">Recording...</span>
         <span className="pill-timer">{timeString}</span>
@@ -158,7 +173,7 @@ export default function App() {
           <div className="pill-stop-square"></div>
         </button>
         <button className="pill-close-btn" onClick={() => stopRecording(true)} title="Cancel">
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
     );
@@ -311,23 +326,22 @@ export default function App() {
           <div className="ag-input-wrapper">
             {step === 'input' && renderVoicePill()}
             <textarea 
+              ref={textareaRef1}
               value={complaint}
               onChange={(e) => setComplaint(e.target.value)}
-              placeholder="e.g., The streetlights in my colony haven't been working for 3 months. Who is responsible for this?"
+              placeholder="Ask anything, @ to mention, / for actions"
             />
             <div className="ag-bottom-bar">
               <div className="ag-left-actions">
               </div>
               <div className="ag-right-actions">
-                {!isListening && (
-                  <button 
-                    className="ag-mic-btn"
-                    onClick={handleMicClick}
-                    title="Dictate your issue"
-                  >
-                    <AudioLines size={18} />
-                  </button>
-                )}
+                <button 
+                  className={`ag-mic-btn ${isListening ? 'listening' : ''}`}
+                  onClick={handleMicClick}
+                  title={isListening ? "Stop Dictation" : "Dictate your issue"}
+                >
+                  {isListening ? <AudioLines size={18} className="pulse-icon" /> : <Mic size={18} />}
+                </button>
                 <button 
                   className="ag-submit-btn"
                   onClick={handleSubmit}
@@ -363,6 +377,7 @@ export default function App() {
           <div className="ag-input-wrapper">
             {step === 'details' && renderVoicePill()}
             <textarea 
+              ref={textareaRef2}
               value={additionalDetails}
               onChange={(e) => setAdditionalDetails(e.target.value)}
               placeholder="Type your details here (Name, Address, Pincode, etc)..."
@@ -371,15 +386,13 @@ export default function App() {
               <div className="ag-left-actions">
               </div>
               <div className="ag-right-actions">
-                {!isListening && (
-                  <button 
-                    className="ag-mic-btn"
-                    onClick={handleMicClick}
-                    title="Dictate your details"
-                  >
-                    <AudioLines size={18} />
-                  </button>
-                )}
+                <button 
+                  className={`ag-mic-btn ${isListening ? 'listening' : ''}`}
+                  onClick={handleMicClick}
+                  title={isListening ? "Stop Dictation" : "Dictate your details"}
+                >
+                  {isListening ? <AudioLines size={18} className="pulse-icon" /> : <Mic size={18} />}
+                </button>
                 <button 
                   className="ag-submit-btn"
                   onClick={handleSubmit}

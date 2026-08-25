@@ -567,7 +567,7 @@ textarea::placeholder {
 
 .ag-input-wrapper textarea {
   width: 100%;
-  min-height: 80px;
+  height: 80px;
   background: transparent;
   border: none;
   padding: 0;
@@ -577,6 +577,7 @@ textarea::placeholder {
   resize: none;
   box-shadow: none;
   font-family: inherit;
+  overflow-y: auto;
 }
 
 .ag-input-wrapper textarea:focus {
@@ -602,8 +603,8 @@ textarea::placeholder {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #ef4444;
-  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
   border: none;
   display: flex;
   align-items: center;
@@ -612,9 +613,31 @@ textarea::placeholder {
   transition: all 0.2s ease;
 }
 
+.ag-mic-btn.listening {
+  background: #ef4444;
+  color: white;
+}
+
 .ag-mic-btn:hover {
-  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
+}
+
+.ag-mic-btn.listening:hover {
+  background: #dc2626;
+}
+
+.pulse-icon {
+  animation: pulse-scale 0.5s infinite alternate ease-in-out;
+}
+
+.dynamic-mic {
+  animation: pulse-scale 0.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-scale {
+  0% { transform: scale(0.85); }
+  100% { transform: scale(1.15); }
 }
 
 .ag-submit-btn {
