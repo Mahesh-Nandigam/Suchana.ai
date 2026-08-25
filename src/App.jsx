@@ -197,7 +197,8 @@ export default function App() {
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: text }
         ],
-        temperature: 0.2
+        temperature: 0.2,
+        max_tokens: 4096
       })
     });
 
@@ -215,10 +216,15 @@ export default function App() {
     }
 
     const data = await response.json();
-    let content = data.choices[0].message.content;
+    let content = data.choices[0].message.content || '';
     
-    // Remove <think> blocks from reasoning models
-    content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    // Safely remove <think> blocks
+    const thinkEnd = content.lastIndexOf('</think>');
+    if (thinkEnd !== -1) {
+      content = content.substring(thinkEnd + 8);
+    } else if (content.includes('<think>')) {
+      content = content.replace(/<think>[\s\S]*?(<\/think>|$)/gi, '');
+    }
     
     // Clean up potential markdown wrappers
     content = content.replace(/```json/gi, '').replace(/```/gi, '').trim();
@@ -226,8 +232,10 @@ export default function App() {
     // Find the first { and last } to extract just the JSON object
     const startIdx = content.indexOf('{');
     const endIdx = content.lastIndexOf('}');
-    if (startIdx !== -1 && endIdx !== -1) {
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
       content = content.substring(startIdx, endIdx + 1);
+    } else {
+      throw new Error("AI did not return a valid JSON format. Please try again.");
     }
     
     return JSON.parse(content);
